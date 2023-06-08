@@ -1,66 +1,146 @@
-/*
-Input:
-1 + 2
-Output:
-3
-
-Input:
-VI / III
-Output:
-II
-
-Input:
-I - II
-Output:
-Вывод ошибки, так как в римской системе нет отрицательных чисел.
-
-Input:
-I + 1
-Output:
-Вывод ошибки, так как используются одновременно разные системы счисления.
-
-Input:
-1
-Output:
-Вывод ошибки, так как строка не является математической операцией.
-
-Input:
-1 + 2 + 3
-Output:
-Вывод ошибки, так как формат математической операции не удовлетворяет заданию — два операнда и один оператор (+, -, /, *).
-*/
-
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strings"
 	"unicode/utf8"
-	//"strconv"
 )
 
 func main() {
-	Greeting := "\n\nДобро пожаловать в калькулятор" // Приветственная часть
+
+	// Приветственная часть
+	Greeting := "\n\nДобро пожаловать в калькулятор"
 	fmt.Println(Greeting)
 	Delimiter := strings.Repeat("—", utf8.RuneCountInString(Greeting)-2)
 	fmt.Println(Delimiter)
 
-	var expression string
-	fmt.Print("Введите выражение")
-	fmt.Scan(&expression)
+	// Запрос выражения у пользователя
+	fmt.Println("Введите выражение: ")
+	reader := bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
 
-	expression = strings.ReplaceAll(expression, " ", "")
-	action := []string{"+", "-", "*", "/"}
-
-	switch action { //Валидация
-	case "+":
-	case "-":
-	case "*":
-	case "/":
-	default:
-		fmt.Println("Введён нерелевантный символ")
-		os.Exit(0) // Или лучше использовать «panic()»?
+	// Проверка, содержит ли ввод римские цифры
+	var isRoman bool
+	if strings.ContainsAny(input, "IVX") {
+		isRoman = true
 	}
 
+	// Определение оператора в выражении для Split и Switch
+	var operator string
+	operators := [...]string{"+", "-", "*", "/"}
+	for _, op := range operators {
+		if strings.Contains(input, op) {
+			operator = op
+			break
+		} else if op == operators[len(operators)-1] {
+			fmt.Println("Оператор не найден.")
+			return
+		}
+	}
+
+	// Сепарация ввода на операнды по оператору
+	operands := strings.Split(input, operator)
+	if len(operands) != 2 {
+		fmt.Println("Неверный формат выражения, не более двух операндов в выражении")
+		return
+	}
+
+	// Смена типа данных и присваивание
+	var num1, num2 float64
+	if isRoman {
+		num1 = float64(Roman2Arabic(operands[0]))
+		num2 = float64(Roman2Arabic(operands[1]))
+	} else {
+		_, err := fmt.Sscanf(operands[0], "%f", &num1)
+		if err != nil {
+			fmt.Println("Неверный формат первого операнда.")
+			return
+		}
+
+		_, err = fmt.Sscanf(operands[1], "%f", &num2)
+		if err != nil {
+			fmt.Println("Неверный формат второго операнда.")
+			return
+		}
+	}
+	// Валидация операндов
+	if num1 < 1 || num1 > 10 || num2 < 1 || num2 > 10 {
+		fmt.Println("Калькулятор принимает только значения от 1 до 10")
+		return
+	}
+	// Определение математической операции и валидация оператора — Switch
+	var result float64
+	switch operator {
+	case "+":
+		result = num1 + num2
+	case "-":
+		result = num1 - num2
+	case "*":
+		result = num1 * num2
+	case "/":
+		if num2 == 0 {
+			fmt.Println("Мы не в техническом ВУЗе")
+			return
+		}
+		result = num1 / num2
+	default:
+		fmt.Println("Неверный оператор.")
+		return
+	}
+	// Отображение результата
+	if isRoman {
+		fmt.Printf("%s %s %s = %s\n", num1, operator, num2, Arabic2Roman(float64(result)))
+	} else {
+		fmt.Printf("%.0f %s %.0f = %.0f\n", num1, operator, num2, result)
+	}
+}
+
+// Вычисляем арабское значение римской цифры
+
+func Roman2Arabic(num string) float64 {
+	DicR2A := map[string]float64{
+		"I": 1,
+		"V": 5,
+		"X": 10,
+		"L": 50,
+		"C": 100,
+	}
+
+	var result float64
+	for i := 0; i < len(num)-1; i++ {
+		if DicR2A[string(num[i])] < DicR2A[string(num[i+1])] {
+			result -= DicR2A[string(num[i])]
+		} else {
+			result += DicR2A[string(num[i])]
+		}
+		//fmt.Printf("Итерация %d: %d\n", i+1, result)
+	}
+	return result
+}
+
+// Вычисляем римское значение арабской цифры
+func Arabic2Roman(num float64) string {
+	DicA2R := map[float64]string{
+		100: "C",
+		90:  "XC",
+		50:  "L",
+		40:  "XL",
+		10:  "X",
+		9:   "IX",
+		5:   "V",
+		4:   "IV",
+		1:   "I",
+	}
+	var result string
+
+	for value, numeral := range DicA2R {
+		for num >= value {
+			result += numeral
+			num -= value
+		}
+	}
+	return result
 }
