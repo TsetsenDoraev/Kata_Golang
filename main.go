@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-
 	// Приветственная часть
 	Greeting := "\n\nДобро пожаловать в калькулятор"
 	fmt.Println(Greeting)
@@ -43,8 +42,12 @@ func main() {
 
 	// Сепарация ввода на операнды по оператору
 	operands := strings.Split(input, operator)
-	if len(operands) != 2 {
+	if len(operands) > 2 {
 		fmt.Println("Неверный формат выражения, не более двух операндов в выражении")
+		return
+	}
+	if len(operands) < 2 {
+		fmt.Println("Cтрока не является математической операцией")
 		return
 	}
 
@@ -76,23 +79,31 @@ func main() {
 	switch operator {
 	case "+":
 		result = num1 + num2
+
 	case "-":
 		result = num1 - num2
+
 	case "*":
 		result = num1 * num2
+
 	case "/":
 		if num2 == 0 {
 			fmt.Println("Мы не в техническом ВУЗе")
 			return
 		}
 		result = num1 / num2
+
 	default:
 		fmt.Println("Неверный оператор.")
 		return
 	}
 	// Отображение результата
 	if isRoman {
-		fmt.Printf("%s %s %s = %s\n", num1, operator, num2, Arabic2Roman(float64(result)))
+		if result < 0 {
+			fmt.Println("В римской системе нет отрицательных чисел")
+		} else {
+			fmt.Printf("%s\n", Arabic2Roman(float64(result)))
+		}
 	} else {
 		fmt.Printf("%.0f %s %.0f = %.0f\n", num1, operator, num2, result)
 	}
@@ -100,24 +111,24 @@ func main() {
 
 // Вычисляем арабское значение римской цифры
 
-func Roman2Arabic(num string) float64 {
-	DicR2A := map[string]float64{
-		"I": 1,
-		"V": 5,
-		"X": 10,
-		"L": 50,
-		"C": 100,
+func Roman2Arabic(num string) int {
+	result := 0
+	DicR2A := map[rune]int{
+		'I': 1,
+		'V': 5,
+		'X': 10,
+		'L': 50,
+		'C': 100,
 	}
 
-	var result float64
 	for i := 0; i < len(num)-1; i++ {
-		if DicR2A[string(num[i])] < DicR2A[string(num[i+1])] {
-			result -= DicR2A[string(num[i])]
+		if DicR2A[rune(num[i])] < DicR2A[rune(num[i+1])] {
+			result -= DicR2A[rune(num[i])]
 		} else {
-			result += DicR2A[string(num[i])]
+			result += DicR2A[rune(num[i])]
 		}
-		//fmt.Printf("Итерация %d: %d\n", i+1, result)
 	}
+	result += DicR2A[rune(num[len(num)-1])]
 	return result
 }
 
@@ -144,3 +155,10 @@ func Arabic2Roman(num float64) string {
 	}
 	return result
 }
+
+/*Input:
+I + 1
+
+Output:
+Вывод ошибки, так как используются одновременно разные системы счисления.
+*/
